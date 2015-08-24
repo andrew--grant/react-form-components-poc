@@ -1,13 +1,32 @@
 import React from 'react';
 
-export class Form extends React.Component {
+class EventSys {
+
+    constructor() {
+        this.addSubscribers = [];
+        this.removeSubscribers = []; // unused
+    }
+
+    publish(eventName, evt) {
+        var self = this;
+        if(eventName == "add"){
+            this.addSubscribers.map(function (obj) {
+                obj.func(evt.quantity);
+            });
+        }
+    }
+
+    on(eventName, func) {
+        this.addSubscribers.push({eventName: eventName, func: func});
+    }
+}
+
+var eventSys = new EventSys();
+
+class Form extends React.Component {
 
     constructor(props) {
         super(props);
-
-    }
-
-    componentDidMount() {
     }
 
     render() {
@@ -20,13 +39,10 @@ export class Form extends React.Component {
     }
 }
 
-export class AGInput extends React.Component {
+class AGInput extends React.Component {
 
     constructor(props) {
         super(props);
-    }
-
-    componentDidMount() {
     }
 
     render() {
@@ -36,37 +52,31 @@ export class AGInput extends React.Component {
     }
 }
 
-export class AGSelect extends React.Component {
+class AGSelect extends React.Component {
 
     constructor(props) {
         super(props);
     }
 
-    componentDidMount() {
-    }
-
-    handleChange() {
+    handleChange(e) {
+        eventSys.publish("add", {quantity:e.target.selectedIndex});
     }
 
     render() {
         return (
-            <div>
-            <select className="agselect" name={this.props.name} onChange={this.handleChange}>
-                {this.props.children}
-            </select>
-            <AGDyanmicTextFields/>
+            <div onChange={this.handleClick}>
+                <select className="agselect" name={this.props.name} onChange={this.handleChange.bind(this)}>
+                    {this.props.children}
+                </select>
             </div>
         );
     }
 }
 
-export class AGSelectOptions extends React.Component {
+class AGSelectOptions extends React.Component {
 
     constructor(props) {
         super(props);
-    }
-
-    componentDidMount() {
     }
 
     render() {
@@ -79,26 +89,60 @@ export class AGSelectOptions extends React.Component {
     }
 }
 
-
-export class AGDyanmicTextFields extends React.Component {
+class AGDyanmicTextFields extends React.Component {
 
     constructor(props) {
         super(props);
-        this.state = {fields: [55, 55, 55]};
+        this.state = {
+            quantity: this.props.quantity,
+            prefix: this.props.prefix
+        };
     }
 
     componentDidMount() {
-        console.log("debug: " + this.state.fields.length);
+        var self = this;
+        eventSys.on("add", function (quantity) {
+            self.doAdd(quantity);
+        });
+    }
+
+    addField(e) {
+        console.log("e");
+        console.log(e);
+        e.preventDefault();
+        this.doAdd(1)
+    }
+
+    removeField(e) {
+        e.preventDefault();
+        if (this.state.quantity > 1) {
+            this.doRemove(1);
+        }
+    }
+
+    doAdd(qty) {
+        this.setState({quantity: parseInt(this.state.quantity) + qty})
+    }
+
+
+    doRemove(qty) {
+        this.setState({quantity: parseInt(this.state.quantity) - qty})
     }
 
     render() {
+        var fields = [];
+        for (var i = 0; i < this.state.quantity; i++) {
+            fields.push(<AGInput name={this.state.prefix + i} key={i}/>);
+        }
         return (
-            <div name={this.props.name}>
-                {this.state.fields.map(
-                    function (index) {
-                        return <AGInput name="age"/>
-                    }
-                )}
+            <div>
+                <div>
+                    <button onClick={this.addField.bind(this)}>Add</button>
+                    <button onClick={this.removeField.bind(this)}>Remove</button>
+                </div>
+                <div name={this.props.name}>
+                    { fields }
+                </div>
             </div>
         );
     }
@@ -109,10 +153,12 @@ React.render(
         <AGInput name="FirstName"/>
         <AGInput name="Surname"/>
         <AGSelect>
-            <AGSelectOptions selected="selected">Number of Fields to Add</AGSelectOptions>
+            <AGSelectOptions>Number of Fields to Add</AGSelectOptions>
             <AGSelectOptions>1</AGSelectOptions>
             <AGSelectOptions>2</AGSelectOptions>
             <AGSelectOptions>3</AGSelectOptions>
         </AGSelect>
+        <AGDyanmicTextFields quantity="2" prefix="regonum"/>
     </Form>, document.querySelector("#myApp")
 );
+
