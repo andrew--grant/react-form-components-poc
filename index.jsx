@@ -9,7 +9,7 @@ class EventSys {
 
     publish(eventName, evt) {
         var self = this;
-        if(eventName == "add"){
+        if (eventName == "quantity-changed") {
             this.addSubscribers.map(function (obj) {
                 obj.func(evt.quantity);
             });
@@ -23,7 +23,7 @@ class EventSys {
 
 var eventSys = new EventSys();
 
-class Form extends React.Component {
+class AGForm extends React.Component {
 
     constructor(props) {
         super(props);
@@ -33,7 +33,7 @@ class Form extends React.Component {
         return (
             <form>
                 {this.props.children}
-                <button type="submit">Submit</button>
+                <AGButton>Submit</AGButton>
             </form>
         );
     }
@@ -47,7 +47,11 @@ class AGInput extends React.Component {
 
     render() {
         return (
-            <input className="aginput" name={this.props.name} type="text" placeholder={this.props.placeholder}></input>
+            <div className="form-group">
+                <label forName={this.props.name}>{this.props.labelText}</label>
+                <input className="form-control" name={this.props.name} type="text"
+                       placeholder={this.props.placeholder}></input>
+            </div>
         );
     }
 }
@@ -59,13 +63,13 @@ class AGSelect extends React.Component {
     }
 
     handleChange(e) {
-        eventSys.publish("add", {quantity:e.target.selectedIndex});
+        eventSys.publish("quantity-changed", {quantity: e.target.selectedIndex});
     }
 
     render() {
         return (
-            <div onChange={this.handleClick}>
-                <select className="agselect" name={this.props.name} onChange={this.handleChange.bind(this)}>
+            <div>
+                <select className="form-control" name={this.props.name} onChange={this.handleChange.bind(this)}>
                     {this.props.children}
                 </select>
             </div>
@@ -89,10 +93,24 @@ class AGSelectOptions extends React.Component {
     }
 }
 
+class AGButton extends React.Component {
+
+    constructor(props) {
+        super(props);
+    }
+
+    render() {
+        return (
+            <button className="btn btn-default" onClick={this.props.clickHandler}>{this.props.children}</button>
+        );
+    }
+}
+
 class AGDyanmicTextFields extends React.Component {
 
     constructor(props) {
         super(props);
+        this.props.quantityToAdd = 0;
         this.state = {
             quantity: this.props.quantity,
             prefix: this.props.prefix
@@ -101,16 +119,14 @@ class AGDyanmicTextFields extends React.Component {
 
     componentDidMount() {
         var self = this;
-        eventSys.on("add", function (quantity) {
-            self.doAdd(quantity);
+        eventSys.on("quantity-changed", function (quantity) {
+            self.props.quantityToAdd = quantity;
         });
     }
 
-    addField(e) {
-        console.log("e");
-        console.log(e);
+    addFields(e) {
         e.preventDefault();
-        this.doAdd(1)
+        this.doQuantityChanged()
     }
 
     removeField(e) {
@@ -120,28 +136,40 @@ class AGDyanmicTextFields extends React.Component {
         }
     }
 
-    doAdd(qty) {
-        this.setState({quantity: parseInt(this.state.quantity) + qty})
+    doQuantityChanged(qty) {
+        this.setState({quantity: parseInt(this.state.quantity) + parseInt(this.props.quantityToAdd)});
     }
 
-
     doRemove(qty) {
-        this.setState({quantity: parseInt(this.state.quantity) - qty})
+        this.setState({quantity: parseInt(this.state.quantity) - qty});
     }
 
     render() {
         var fields = [];
         for (var i = 0; i < this.state.quantity; i++) {
-            fields.push(<AGInput name={this.state.prefix + i} key={i}/>);
+            fields.push(<AGInput labelText={'Product ' + (i + 1)} name={this.state.prefix + i} key={i}/>);
         }
         return (
-            <div>
-                <div>
-                    <button onClick={this.addField.bind(this)}>Add</button>
-                    <button onClick={this.removeField.bind(this)}>Remove</button>
+            <div class="container">
+                <div className="row">
+                    <div className="col-md-3">
+                        <AGSelect>
+                            <AGSelectOptions>Quantity</AGSelectOptions>
+                            <AGSelectOptions>1</AGSelectOptions>
+                            <AGSelectOptions>2</AGSelectOptions>
+                            <AGSelectOptions>3</AGSelectOptions>
+                            <AGSelectOptions>4</AGSelectOptions>
+                        </AGSelect>
+                    </div>
+                    <div className="col-md-2">
+                        <AGButton clickHandler={this.addFields.bind(this)}>Add</AGButton> <AGButton
+                        clickHandler={this.removeField.bind(this)}>Remove</AGButton>
+                    </div>
                 </div>
-                <div name={this.props.name}>
-                    { fields }
+                <div className="row">
+                    <div className="col-md-5" name={this.props.name}>
+                        { fields }
+                    </div>
                 </div>
             </div>
         );
@@ -149,16 +177,20 @@ class AGDyanmicTextFields extends React.Component {
 }
 
 React.render(
-    <Form>
-        <AGInput name="FirstName"/>
-        <AGInput name="Surname"/>
-        <AGSelect>
-            <AGSelectOptions>Number of Fields to Add</AGSelectOptions>
-            <AGSelectOptions>1</AGSelectOptions>
-            <AGSelectOptions>2</AGSelectOptions>
-            <AGSelectOptions>3</AGSelectOptions>
-        </AGSelect>
-        <AGDyanmicTextFields quantity="2" prefix="regonum"/>
-    </Form>, document.querySelector("#myApp")
+    <AGForm>
+        <div class="container">
+            <div class="row">
+                <div class="col-sm12">
+                    <h1>React Demo</h1>
+
+                    <p>A sample React form demonstrating adding and removing inputs.</p>
+
+                    <p>This also demonstrates communication between components with no parent-child or child-parent
+                        relationship.</p>
+                </div>
+            </div>
+        </div>
+        <AGDyanmicTextFields quantity="2" prefix="registration-number"/>
+    </AGForm>, document.querySelector("#myApp")
 );
 
