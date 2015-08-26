@@ -1,27 +1,26 @@
 import React from 'react';
 
-class EventSys {
+class SimplePubSub {
 
     constructor() {
-        this.addSubscribers = [];
-        this.removeSubscribers = []; // unused
+        this.subscribers = [];
     }
 
     publish(eventName, evt) {
         var self = this;
         if (eventName == "quantity-changed") {
-            this.addSubscribers.map(function (obj) {
+            this.subscribers.map(function (obj) {
                 obj.func(evt.quantity);
             });
         }
     }
 
     on(eventName, func) {
-        this.addSubscribers.push({eventName: eventName, func: func});
+        this.subscribers.push({eventName: eventName, func: func});
     }
 }
 
-var eventSys = new EventSys();
+var pubSub = new SimplePubSub();
 
 class AGForm extends React.Component {
 
@@ -63,7 +62,7 @@ class AGSelect extends React.Component {
     }
 
     handleChange(e) {
-        eventSys.publish("quantity-changed", {quantity: e.target.selectedIndex});
+        pubSub.publish("quantity-changed", {quantity: e.target.selectedIndex});
     }
 
     render() {
@@ -119,7 +118,7 @@ class AGDyanmicTextFields extends React.Component {
 
     componentDidMount() {
         var self = this;
-        eventSys.on("quantity-changed", function (quantity) {
+        pubSub.on("quantity-changed", function (quantity) {
             self.props.quantityToAdd = quantity;
         });
     }
@@ -193,4 +192,3 @@ React.render(
         <AGDyanmicTextFields quantity="2" prefix="registration-number"/>
     </AGForm>, document.querySelector("#myApp")
 );
-
